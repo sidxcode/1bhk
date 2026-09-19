@@ -55,7 +55,7 @@ h2, .intro-heading p { color: var(--secondary-text); }
 .project-kind { opacity: 0; white-space: nowrap; color: var(--primary-text); }
 .project-row:hover .project-kind, .project-row:focus-visible .project-kind { opacity: 1; }
 .side-nav, .intro-heading, .intro-copy, .work-heading-row, .gallery-shell { transition: filter .2s ease; }
-.portfolio-shell:has(.project-row:is(:hover, :focus-visible)) :is(.side-nav, .intro-heading, .intro-copy, .work-heading-row, .gallery-shell),
+.portfolio-shell:has(.project-row:is(:hover, :focus-visible)) :is(.side-nav, .intro-heading, .intro-copy, .work-heading-row),
 .portfolio-shell:has(.project-row:is(:hover, :focus-visible)) .project-row:not(:hover):not(:focus-visible) { filter: blur(3px); }
 .text-page section + section { margin-top: 62px; }
 .now-page, .about-page { font-weight: 500; }
@@ -97,17 +97,19 @@ h2, .intro-heading p { color: var(--secondary-text); }
 }
 @media (max-width: 700px) {
   .portfolio-shell { position: relative; isolation: isolate; display: block; height: auto; overflow: visible; }
-  .side-nav { position: sticky; top: 0; z-index: 5; width: 100%; flex-direction: row; gap: 24px; padding: 18px 22px; background: color-mix(in srgb, var(--background) 88%, transparent); backdrop-filter: blur(16px); font-size: 12px; overflow-x: auto; }
+  .side-nav { position: sticky; top: 0; z-index: 5; width: 100%; flex-direction: row; gap: 24px; padding: 18px 22px; background: color-mix(in srgb, var(--background) 20%, transparent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); font-size: 12px; overflow-x: auto; }
   .side-nav a { white-space: nowrap; }
   .content-panel { height: auto; overflow: visible; }
   .content-inner { padding: 48px 22px 72px; max-width: none; min-height: 55vh; }
   .intro-heading { margin-bottom: 40px; }
-  .work-heading-row { align-items: flex-start; flex-direction: column; gap: 16px; margin-bottom: 22px; }
-  .filters { flex-wrap: wrap; }
+  .work-heading-row { align-items: center; flex-direction: row; gap: 8px; margin-bottom: 22px; }
+  .filters { flex-wrap: nowrap; gap: 2px; }
+  .filter { padding: 7px 8px; white-space: nowrap; }
   .project-kind { display: none; }
-  .gallery-shell { height: 75vh; padding: 0 12px 30px 22px; }
-  .gallery { display: flex; align-items: flex-start; gap: 16px; overflow-x: auto; overflow-y: hidden; }
-  .gallery-frame { width: min(68vw, 340px); height: auto; margin-bottom: 0; }
+  .gallery-shell { height: auto; padding: 0 22px 96px; }
+  .gallery { display: flex; flex-direction: column; gap: 16px; height: auto; overflow: visible; }
+  .gallery-frame { width: 100%; height: auto; margin-bottom: 0; }
+  .gallery-frame[data-repeat="true"] { display: none; }
 }
 
 .site-background { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--background); transition: filter .2s ease; }
@@ -141,4 +143,17 @@ h2, .intro-heading p { color: var(--secondary-text); }
 }
 @media (prefers-reduced-motion: reduce) {
   .site-background { transition: none; }
+}
+
+.gallery-frame { position: relative; transition: opacity .25s ease, box-shadow .25s ease, background .25s ease; }
+.gallery-shell[data-previewing="true"] .gallery-frame { opacity: .3; }
+.gallery-shell[data-previewing="true"] .gallery-frame[data-highlighted="true"] { opacity: 1; background: color-mix(in srgb, var(--brand) 12%, var(--surface)); box-shadow: none; }
+.gallery-card-label { position: absolute; bottom: 18px; left: 18px; padding: 7px 10px; background: var(--background); color: var(--primary-text); font-size: 12px; font-weight: 500; opacity: 0; transition: opacity .2s ease; }
+.gallery-frame[data-highlighted="true"] .gallery-card-label { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .gallery-frame, .gallery-card-label { transition: none; } }
+.scroll-to-top { display: none; }
+@media (max-width: 700px) {
+  .gallery-shell[data-previewing="true"] .gallery-frame { opacity: 1; }
+  .scroll-to-top { position: fixed; right: 22px; bottom: calc(86px + env(safe-area-inset-bottom)); z-index: 10; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--border); border-radius: 50%; color: var(--primary-text); background: color-mix(in srgb, var(--background) 75%, transparent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 4px 20px rgb(0 0 0 / 8%); }
+  .scroll-to-top:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; }
 }

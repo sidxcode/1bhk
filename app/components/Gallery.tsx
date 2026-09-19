@@ -2,7 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const imageCount = 3;
+// Standalone images deliberately have no corresponding work item.
+const galleryImages = [
+  { id: "canine-studio", label: "Canine Studio" },
+  { id: "asanjo", label: "Asanjo" },
+  { id: "standalone-1", label: "Gallery image 1" },
+  { id: "eatree", label: "Eatree" },
+  { id: "tata", label: "Tata Group & Sons" },
+  { id: "standalone-2", label: "Gallery image 2" },
+  { id: "jagdish", label: "Jagdish Store" },
+  { id: "spread-home", label: "Spread Home" },
+  { id: "standalone-3", label: "Gallery image 3" },
+  { id: "happiness-coach", label: "Happiness Coach" },
+];
+const imageCount = galleryImages.length;
 
 function GalleryViewer({ initialIndex, origin, onClose }: {
   initialIndex: number;
@@ -57,8 +70,8 @@ function GalleryViewer({ initialIndex, origin, onClose }: {
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5-7 7 7 7M7 12h13" /></svg>
         </button>
         <figure className="viewer-figure">
-          <div className="viewer-image" ref={imageRef} role="img" aria-label={`Gallery image placeholder ${index + 1} of ${imageCount}`} />
-          <figcaption aria-live="polite" aria-atomic="true">{index + 1} / {imageCount}</figcaption>
+          <div className="viewer-image" ref={imageRef} role="img" aria-label={`${galleryImages[index].label} placeholder`} />
+          <figcaption aria-live="polite" aria-atomic="true">{galleryImages[index].label} · {index + 1} / {imageCount}</figcaption>
         </figure>
         <button className="viewer-button viewer-next" type="button" aria-label="Next image" onClick={() => move(1)}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 5 7 7-7 7M4 12h13" /></svg>
@@ -68,26 +81,68 @@ function GalleryViewer({ initialIndex, origin, onClose }: {
   );
 }
 
-export default function Gallery() {
+export default function Gallery({ activeId }: { activeId: string | null }) {
   const galleryRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const pauseUntilRef = useRef(0);
   const viewerOpenRef = useRef(false);
+  const previewRef = useRef<HTMLElement | null>(null);
   const [selected, setSelected] = useState<{ index: number; origin: DOMRect } | null>(null);
+
+  useEffect(() => {
+    const gallery = galleryRef.current;
+    previewRef.current = null;
+    if (!gallery || !activeId) return;
+    const horizontal = window.matchMedia("(max-width: 700px)").matches;
+    if (horizontal) return;
+    const viewport = horizontal ? gallery.clientWidth : gallery.clientHeight;
+    const position = horizontal ? gallery.scrollLeft : gallery.scrollTop;
+    const max = horizontal ? gallery.scrollWidth - viewport : gallery.scrollHeight - viewport;
+    const galleryBounds = gallery.getBoundingClientRect();
+    let closestDistance = Infinity;
+    for (const card of Array.from(gallery.children) as HTMLElement[]) {
+      if (card.dataset.galleryId !== activeId) continue;
+      const bounds = card.getBoundingClientRect();
+      const center = position + (horizontal
+        ? bounds.left - galleryBounds.left + bounds.width / 2
+        : bounds.top - galleryBounds.top + bounds.height / 2);
+      const target = center - viewport / 2;
+      if (target < 0 || target > max) continue;
+      if (Math.abs(target - position) < closestDistance) {
+        closestDistance = Math.abs(target - position);
+        previewRef.current = card;
+      }
+    }
+  }, [activeId]);
 
   useEffect(() => {
     const gallery = galleryRef.current;
     if (!gallery) return;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const mobile = window.matchMedia("(max-width: 700px)");
     let animationFrame = 0;
     let previousTime = 0;
 
     const animate = (time: number) => {
+      if (mobile.matches) return;
       const horizontal = window.matchMedia("(max-width: 700px)").matches;
       const first = gallery.children[0] as HTMLElement;
       const repeat = gallery.children[imageCount] as HTMLElement;
       const distance = horizontal ? repeat.offsetLeft - first.offsetLeft : repeat.offsetTop - first.offsetTop;
-      if (distance && !viewerOpenRef.current && !reducedMotion.matches && time >= pauseUntilRef.current) {
+      const preview = previewRef.current;
+      if (preview && !viewerOpenRef.current) {
+        const position = horizontal ? gallery.scrollLeft : gallery.scrollTop;
+        const bounds = preview.getBoundingClientRect();
+        const galleryBounds = gallery.getBoundingClientRect();
+        const target = position + (horizontal
+          ? bounds.left + bounds.width / 2 - galleryBounds.left - gallery.clientWidth / 2
+          : bounds.top + bounds.height / 2 - galleryBounds.top - gallery.clientHeight / 2);
+        const elapsed = previousTime ? Math.min(time - previousTime, 64) : 16;
+        const next = reducedMotion.matches || Math.abs(target - position) < 1.5
+          ? target : position + (target - position) * (1 - Math.exp(-elapsed / 95));
+        if (horizontal) gallery.scrollLeft = next;
+        else gallery.scrollTop = next;
+      } else if (distance && !viewerOpenRef.current && !reducedMotion.matches && time >= pauseUntilRef.current) {
         const elapsed = previousTime ? Math.min(time - previousTime, 64) : 0;
         const position = horizontal ? gallery.scrollLeft : gallery.scrollTop;
         const next = (position + elapsed * 0.045) % distance;
@@ -97,13 +152,28 @@ export default function Gallery() {
       previousTime = time;
       animationFrame = requestAnimationFrame(animate);
     };
-    animationFrame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationFrame);
+    const updateLayout = () => {
+      cancelAnimationFrame(animationFrame);
+      previousTime = 0;
+      if (mobile.matches) {
+        previewRef.current = null;
+        gallery.scrollTop = 0;
+        gallery.scrollLeft = 0;
+      } else {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+    updateLayout();
+    mobile.addEventListener("change", updateLayout);
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      mobile.removeEventListener("change", updateLayout);
+    };
   }, []);
 
   return (
     <>
-      <aside className="gallery-shell" aria-label="Gallery carousel">
+      <aside className="gallery-shell" aria-label="Gallery" data-previewing={!!activeId}>
         <div className="gallery" ref={galleryRef}
           onWheel={() => { pauseUntilRef.current = performance.now() + 3000; }}
           onTouchStart={() => { pauseUntilRef.current = performance.now() + 3000; }}
@@ -113,13 +183,16 @@ export default function Gallery() {
           }}>
           {Array.from({ length: imageCount * 4 }, (_, index) => (
             <button className="gallery-frame" type="button" key={index}
+              data-repeat={index >= imageCount}
+              data-gallery-id={galleryImages[index % imageCount].id}
+              data-highlighted={activeId === galleryImages[index % imageCount].id}
               tabIndex={index < imageCount ? 0 : -1}
-              aria-label={`Open gallery image ${index % imageCount + 1}`} aria-haspopup="dialog"
+              aria-label={`Open ${galleryImages[index % imageCount].label}`} aria-haspopup="dialog"
               onClick={(event) => {
                 triggerRef.current = event.currentTarget;
                 viewerOpenRef.current = true;
                 setSelected({ index: index % imageCount, origin: event.currentTarget.getBoundingClientRect() });
-              }} />
+              }}><span className="gallery-card-label">{galleryImages[index % imageCount].label}</span></button>
           ))}
         </div>
       </aside>
