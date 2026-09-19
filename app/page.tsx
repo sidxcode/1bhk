@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+
+const DitherBackground = dynamic(() => import("./components/Dither"), { ssr: false });
 
 type Section = "home" | "now" | "about" | "playground";
 type Category = "All" | "Product" | "Web" | "Brand";
@@ -81,7 +84,6 @@ function NowContent() {
   return (
     <div className="text-page now-page">
       <section>
-        <h1>Now</h1>
         <p>Currently rewatching Modern Family.</p>
         <p>Getting back into sketching.</p>
       </section>
@@ -105,7 +107,6 @@ function AboutContent() {
   return (
     <div className="text-page about-page">
       <section>
-        <h1>About</h1>
         <p>Hi, I am Siddharth Borman from Assam, although i have spent my whole life traveling all across India.</p>
         <p>I graduated from Kalinga Institute Of Industrial Technology with a bachelor’s degree in Information Technology in 2025.</p>
         <p>I first stumbled across design during my second year at university, where i started designing websites because i was into really into web development, and somehow ended up getting my first freelance client to design an app.</p>
@@ -187,6 +188,7 @@ export default function Page() {
 
   return (
     <div className="portfolio-shell">
+      <div className="site-background" aria-hidden="true"><DitherBackground /></div>
       <nav className="side-nav" aria-label="Main navigation">
         {sections.map((item) => (
           <a key={item.id} href={`#${item.id}`} aria-current={section === item.id ? "page" : undefined}>

@@ -7,7 +7,7 @@ button, a { font: inherit; }
 button { cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 
-.portfolio-shell { display: grid; grid-template-columns: 16% 43.4% 40.6%; height: 100dvh; min-height: 0; overflow: hidden; }
+.portfolio-shell { position: relative; isolation: isolate; display: grid; grid-template-columns: 16% 43.4% 40.6%; height: 100dvh; min-height: 0; overflow: hidden; }
 .side-nav { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; padding: 12vh 0 0 31px; }
 .side-nav a { color: var(--secondary-text); transition: color .18s ease; }
 .side-nav a:hover, .side-nav a:focus-visible, .side-nav a[aria-current="page"] { color: var(--primary-text); }
@@ -37,6 +37,7 @@ h2, .intro-heading p { color: var(--secondary-text); }
 .portfolio-shell:has(.project-row:is(:hover, :focus-visible)) :is(.side-nav, .intro-heading, .intro-copy, .work-heading-row, .gallery-shell),
 .portfolio-shell:has(.project-row:is(:hover, :focus-visible)) .project-row:not(:hover):not(:focus-visible) { filter: blur(3px); }
 .text-page section + section { margin-top: 62px; }
+.now-page, .about-page { font-weight: 500; }
 .text-page h1, .text-page h2 { margin-bottom: 32px; }
 .text-page p + p { margin-top: 13px; }
 .about-page p { margin-bottom: 13px; }
@@ -54,7 +55,7 @@ h2, .intro-heading p { color: var(--secondary-text); }
   .filter { padding: 7px 11px; }
 }
 @media (max-width: 700px) {
-  .portfolio-shell { display: block; height: auto; overflow: visible; }
+  .portfolio-shell { position: relative; isolation: isolate; display: block; height: auto; overflow: visible; }
   .side-nav { position: sticky; top: 0; z-index: 5; width: 100%; flex-direction: row; gap: 24px; padding: 18px 22px; background: #151515f2; font-size: 12px; overflow-x: auto; }
   .side-nav a { white-space: nowrap; }
   .content-panel { height: auto; overflow: visible; }
@@ -67,3 +68,7 @@ h2, .intro-heading p { color: var(--secondary-text); }
   .gallery { display: flex; align-items: flex-start; gap: 16px; overflow-x: auto; overflow-y: hidden; }
   .gallery-frame { width: min(68vw, 340px); height: auto; margin-bottom: 0; }
 }
+
+.site-background { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--background); transition: filter .2s ease; }
+.dither-container { width: 100%; height: 100%; }
+.portfolio-shell:has(.project-row:is(:hover, :focus-visible)) .site-background { filter: blur(3px); }
