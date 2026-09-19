@@ -274,7 +274,7 @@ function Dither({
   waveSpeed = 0.02,
   waveFrequency = 0.6,
   waveAmplitude = 0.05,
-  waveColor = [0.21568627450980393, 0.5137254901960784, 1],
+  waveColor = [0.15, 0.32, 0.65],
   backgroundColor = [0.07058823529411765, 0.07058823529411765, 0.07058823529411765],
   colorNum = 5.9,
   pixelSize = 2,
