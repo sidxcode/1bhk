@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import Gallery from "./components/Gallery";
+import ScrollToTop from "./components/ScrollToTop";
 
 const DitherBackground = dynamic(() => import("./components/Dither"), { ssr: false });
 
@@ -18,17 +19,17 @@ const sections: { id: Section; label: string }[] = [
   { id: "playground", label: "Playground" },
 ];
 
-const projects: { name: string; kind: string; categories: Category[] }[] = [
-  { name: "Canine Studio", kind: "Web & Brand Design", categories: ["Web", "Brand"] },
-  { name: "Asanjo", kind: "Product Design", categories: ["Product"] },
-  { name: "Eatree", kind: "Product Design", categories: ["Product"] },
-  { name: "Tata Group & Sons", kind: "Brand Design", categories: ["Brand"] },
-  { name: "Jagdish Store", kind: "Web Design", categories: ["Web"] },
-  { name: "Spread Home", kind: "Web Design", categories: ["Web"] },
-  { name: "Happiness Coach", kind: "Brand Design", categories: ["Brand"] },
+const projects: { name: string; kind: string; categories: Category[]; galleryId: string }[] = [
+  { name: "Canine Studio", kind: "Web & Brand Design", categories: ["Web", "Brand"], galleryId: "canine-studio" },
+  { name: "Asanjo", kind: "Product Design", categories: ["Product"], galleryId: "asanjo" },
+  { name: "Eatree", kind: "Product Design", categories: ["Product"], galleryId: "eatree" },
+  { name: "Tata Group & Sons", kind: "Brand Design", categories: ["Brand"], galleryId: "tata" },
+  { name: "Jagdish Store", kind: "Web Design", categories: ["Web"], galleryId: "jagdish" },
+  { name: "Spread Home", kind: "Web Design", categories: ["Web"], galleryId: "spread-home" },
+  { name: "Happiness Coach", kind: "Brand Design", categories: ["Brand"], galleryId: "happiness-coach" },
 ];
 
-function HomeContent() {
+function HomeContent({ onHover, onFocus }: { onHover: (id: string | null) => void; onFocus: (id: string | null) => void }) {
   const [category, setCategory] = useState<Category>("All");
   const visibleProjects = projects.filter(
     (project) => category === "All" || project.categories.includes(category),
@@ -63,7 +64,7 @@ function HomeContent() {
                 type="button"
                 className={`filter ${category === filter ? "active" : ""}`}
                 aria-pressed={category === filter}
-                onClick={() => setCategory(filter)}
+                onClick={() => { setCategory(filter); onHover(null); onFocus(null); }}
               >
                 {filter}
               </button>
@@ -72,7 +73,10 @@ function HomeContent() {
         </div>
         <div className="project-list">
           {visibleProjects.map((project) => (
-            <div className="project-row" key={project.name} tabIndex={0}>
+            <div className="project-row" key={project.name} tabIndex={0}
+              onPointerEnter={(event) => { if (event.pointerType !== "touch") onHover(project.galleryId); }}
+              onPointerLeave={() => onHover(null)}
+              onFocus={() => onFocus(project.galleryId)} onBlur={() => onFocus(null)}>
               <span>{project.name}</span>
               <span className="project-kind">{project.kind}</span>
             </div>
@@ -130,6 +134,8 @@ export default function Page() {
   const [section, setSection] = useState<Section>("home");
   const [appearance, setAppearance] = useState<Appearance>({ theme: "dark", hue: 220 });
   const contentRef = useRef<HTMLElement>(null);
+  const [hoveredGallery, setHoveredGallery] = useState<string | null>(null);
+  const [focusedGallery, setFocusedGallery] = useState<string | null>(null);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -155,6 +161,8 @@ export default function Page() {
       const hash = window.location.hash.slice(1);
       setSection(sections.some((item) => item.id === hash) ? hash as Section : "home");
       contentRef.current?.scrollTo({ top: 0 });
+      setHoveredGallery(null);
+      setFocusedGallery(null);
     };
     updateSection();
     window.addEventListener("hashchange", updateSection);
@@ -175,13 +183,14 @@ export default function Page() {
       </nav>
       <main className="content-panel" ref={contentRef} id={section}>
         <div className="content-inner">
-          {section === "home" && <HomeContent />}
+          {section === "home" && <HomeContent onHover={setHoveredGallery} onFocus={setFocusedGallery} />}
           {section === "now" && <NowContent />}
           {section === "about" && <AboutContent />}
           {section === "playground" && <div className="text-page"><h1>Playground</h1></div>}
         </div>
       </main>
-      <Gallery />
+      <Gallery activeId={section === "home" ? hoveredGallery ?? focusedGallery : null} />
+      <ScrollToTop />
       <aside className="appearance-controls" aria-label="Appearance">
         <div className="accent-control">
           <label htmlFor="accent-hue">Accent colour</label>
