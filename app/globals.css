@@ -72,3 +72,8 @@ h2, .intro-heading p { color: var(--secondary-text); }
 .site-background { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--background); transition: filter .2s ease; }
 .dither-container { width: 100%; height: 100%; }
 .portfolio-shell:has(.project-row:is(:hover, :focus-visible)) .site-background { filter: blur(3px); }
+.dither-toggle { position: fixed; bottom: 16px; left: 16px; z-index: 10; width: 12px; height: 12px; padding: 0; border: 0; border-radius: 50%; background: linear-gradient(180deg, #fff 0%, #999 99%); cursor: pointer; transition: opacity .2s ease, filter .2s ease; }
+.dither-toggle:hover { filter: brightness(1.18); }
+.dither-toggle:focus-visible { outline: 2px solid var(--primary-text); outline-offset: 4px; }
+.dither-toggle[aria-pressed="false"] { opacity: .45; }
+.portfolio-shell:has(.project-row:is(:hover, :focus-visible)) .dither-toggle { filter: blur(3px); }

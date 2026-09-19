@@ -173,6 +173,7 @@ function Gallery() {
 
 export default function Page() {
   const [section, setSection] = useState<Section>("home");
+  const [ditherEnabled, setDitherEnabled] = useState(true);
   const contentRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -188,7 +189,9 @@ export default function Page() {
 
   return (
     <div className="portfolio-shell">
-      <div className="site-background" aria-hidden="true"><DitherBackground /></div>
+      <div className="site-background" aria-hidden="true">
+        {ditherEnabled && <DitherBackground />}
+      </div>
       <nav className="side-nav" aria-label="Main navigation">
         {sections.map((item) => (
           <a key={item.id} href={`#${item.id}`} aria-current={section === item.id ? "page" : undefined}>
@@ -205,6 +208,14 @@ export default function Page() {
         </div>
       </main>
       <Gallery />
+      <button
+        className="dither-toggle"
+        type="button"
+        aria-label="Animated background"
+        aria-pressed={ditherEnabled}
+        title={ditherEnabled ? "Turn off animated background" : "Turn on animated background"}
+        onClick={() => setDitherEnabled((enabled) => !enabled)}
+      />
     </div>
   );
 }
