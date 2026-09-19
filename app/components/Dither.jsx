@@ -31,6 +31,8 @@ uniform vec3 backgroundColor;
 uniform vec2 mousePos;
 uniform int enableMouseInteraction;
 uniform float mouseRadius;
+uniform float rippleTime;
+uniform vec3 ripples[8];
 
 vec4 mod289(vec4 x) { return x - floor(x * (1.0/289.0)) * 289.0; }
 vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
@@ -87,7 +89,24 @@ void main() {
   vec2 uv = gl_FragCoord.xy / resolution.xy;
   uv -= 0.5;
   uv.x *= resolution.x / resolution.y;
-  float f = pattern(uv);
+  vec2 displacement = vec2(0.0);
+  float rippleLight = 0.0;
+  for (int i = 0; i < 8; i++) {
+    float age = rippleTime - ripples[i].z;
+    if (age >= 0.0 && age < 2.8) {
+      vec2 center = (ripples[i].xy - 0.5) * vec2(1.0, -1.0);
+      center.x *= resolution.x / resolution.y;
+      vec2 delta = uv - center;
+      float distance = length(delta);
+      float front = distance - age * 0.24;
+      float envelope = exp(-front * front / 0.006)
+        * smoothstep(0.0, 0.12, age) * (1.0 - smoothstep(0.4, 2.8, age));
+      float wave = sin(front * 115.0) * envelope;
+      displacement += delta / max(distance, 0.001) * wave * 0.045;
+      rippleLight += wave * 0.24;
+    }
+  }
+  float f = pattern(uv + displacement) + rippleLight;
   if (enableMouseInteraction == 1) {
     vec2 mouseNDC = (mousePos / resolution - 0.5) * vec2(1.0, -1.0);
     mouseNDC.x *= resolution.x / resolution.y;
@@ -176,10 +195,14 @@ function DitheredWaves({
 }) {
   const materialRef = useRef(null);
   const mouseRef = useRef(new THREE.Vector2(-10000, -10000));
+  const ripples = useMemo(() => Array.from({ length: 8 }, () => new THREE.Vector3(0, 0, -100)), []);
+  const nextRippleRef = useRef(0);
   const { viewport, size, gl } = useThree();
 
   const waveUniforms = useMemo(() => ({
     time: new THREE.Uniform(0),
+    rippleTime: new THREE.Uniform(0),
+    ripples: new THREE.Uniform(ripples),
     resolution: new THREE.Uniform(new THREE.Vector2(0, 0)),
     waveSpeed: new THREE.Uniform(waveSpeed),
     waveFrequency: new THREE.Uniform(waveFrequency),
@@ -189,7 +212,7 @@ function DitheredWaves({
     mousePos: new THREE.Uniform(new THREE.Vector2(0, 0)),
     enableMouseInteraction: new THREE.Uniform(enableMouseInteraction ? 1 : 0),
     mouseRadius: new THREE.Uniform(mouseRadius)
-  }), [waveSpeed, waveFrequency, waveAmplitude, waveColor, backgroundColor, enableMouseInteraction, mouseRadius]);
+  }), [waveSpeed, waveFrequency, waveAmplitude, waveColor, backgroundColor, enableMouseInteraction, mouseRadius, ripples]);
 
   useEffect(() => {
     const dpr = gl.getPixelRatio();
@@ -206,6 +229,7 @@ function DitheredWaves({
   useFrame(({ clock }) => {
     const u = materialRef.current?.uniforms;
     if (!u) return;
+    u.rippleTime.value = performance.now() / 1000;
 
     if (!disableAnimation) {
       u.time.value = clock.getElapsedTime();
@@ -249,6 +273,27 @@ function DitheredWaves({
       window.removeEventListener('blur', clearPointer);
     };
   }, [enableMouseInteraction, gl]);
+
+  useEffect(() => {
+    if (!enableMouseInteraction) return;
+    const handleClick = (event) => {
+      if (event.button !== 0 || event.detail === 0) return;
+      const rect = gl.domElement.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
+      ripples[nextRippleRef.current].set(
+        (event.clientX - rect.left) / rect.width,
+        (event.clientY - rect.top) / rect.height,
+        performance.now() / 1000,
+      );
+      nextRippleRef.current = (nextRippleRef.current + 1) % ripples.length;
+    };
+    // Capture clicks without consuming them, so links and gallery controls still work.
+    window.addEventListener('click', handleClick, { passive: true, capture: true });
+    return () => {
+      window.removeEventListener('click', handleClick, true);
+      ripples.forEach((ripple) => { ripple.z = -100; });
+    };
+  }, [enableMouseInteraction, gl, ripples]);
 
   return (
     <>
@@ -315,8 +360,13 @@ class BackgroundBoundary extends Component {
   render() { return this.state.failed ? null : this.props.children; }
 }
 
-export default function DitherBackground() {
+export default function DitherBackground({ hue = 220, theme = "dark", animated = true }) {
   const [reducedMotion, setReducedMotion] = useState(false);
+  const waveColor = useMemo(() => new THREE.Color()
+    .setHSL(hue / 360, 0.625, theme === "dark" ? 0.4 : 0.55).toArray(), [hue, theme]);
+  const backgroundColor = useMemo(() => theme === "dark"
+    ? [0.07058823529411765, 0.07058823529411765, 0.07058823529411765]
+    : [0.72, 0.70, 0.65], [theme]);
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => setReducedMotion(media.matches);
@@ -327,7 +377,9 @@ export default function DitherBackground() {
 
   return (
     <BackgroundBoundary>
-      <Dither disableAnimation={reducedMotion} enableMouseInteraction={!reducedMotion} />
+      <Dither waveColor={waveColor} backgroundColor={backgroundColor}
+        colorNum={theme === "dark" ? 5.9 : 12}
+        disableAnimation={reducedMotion || !animated} enableMouseInteraction={!reducedMotion && animated} />
     </BackgroundBoundary>
   );
 }

@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
+import Gallery from "./components/Gallery";
 
 const DitherBackground = dynamic(() => import("./components/Dither"), { ssr: false });
 
 type Section = "home" | "now" | "about" | "playground";
 type Category = "All" | "Product" | "Web" | "Brand";
+type Appearance = { theme: "light" | "dark"; hue: number };
+const appearanceKey = "portfolio-dither-appearance";
 
 const sections: { id: Section; label: string }[] = [
   { id: "home", label: "Home" },
@@ -123,58 +126,29 @@ function AboutContent() {
   );
 }
 
-function Gallery() {
-  const galleryRef = useRef<HTMLDivElement>(null);
-  const pauseUntilRef = useRef(0);
-  const count = 3;
-
-  useEffect(() => {
-    const gallery = galleryRef.current;
-    if (!gallery) return;
-
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let animationFrame = 0;
-    let previousTime = 0;
-
-    const animate = (time: number) => {
-      const horizontal = window.matchMedia("(max-width: 700px)").matches;
-      const first = gallery.children[0] as HTMLElement;
-      const repeat = gallery.children[count] as HTMLElement;
-      const distance = horizontal
-        ? repeat.offsetLeft - first.offsetLeft
-        : repeat.offsetTop - first.offsetTop;
-
-      if (distance && !reducedMotion.matches && time >= pauseUntilRef.current) {
-        const elapsed = previousTime ? Math.min(time - previousTime, 64) : 0;
-        const position = horizontal ? gallery.scrollLeft : gallery.scrollTop;
-        const next = (position + elapsed * 0.045) % distance;
-        if (horizontal) gallery.scrollLeft = next;
-        else gallery.scrollTop = next;
-      }
-
-      previousTime = time;
-      animationFrame = requestAnimationFrame(animate);
-    };
-
-    animationFrame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationFrame);
-  }, []);
-
-  return (
-    <aside className="gallery-shell" aria-label="Gallery carousel">
-      <div className="gallery" ref={galleryRef} onWheel={() => { pauseUntilRef.current = performance.now() + 3000; }} onTouchStart={() => { pauseUntilRef.current = performance.now() + 3000; }}>
-        {Array.from({ length: count * 4 }, (_, index) => (
-          <div className="gallery-frame" key={index} aria-hidden={index >= count} aria-label={index < count ? `Gallery image placeholder ${index + 1} of ${count}` : undefined} />
-        ))}
-      </div>
-    </aside>
-  );
-}
-
 export default function Page() {
   const [section, setSection] = useState<Section>("home");
-  const [ditherEnabled, setDitherEnabled] = useState(true);
+  const [appearance, setAppearance] = useState<Appearance>({ theme: "dark", hue: 220 });
   const contentRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(appearanceKey) || "null");
+        if (saved && (saved.theme === "light" || saved.theme === "dark")
+          && typeof saved.hue === "number" && saved.hue >= 0 && saved.hue <= 360) {
+          setAppearance({ theme: saved.theme, hue: saved.hue });
+        }
+      } catch { /* Use the default appearance when storage is unavailable. */ }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  function updateAppearance(change: Partial<Appearance>) {
+    const next = { ...appearance, ...change };
+    setAppearance(next);
+    try { localStorage.setItem(appearanceKey, JSON.stringify(next)); } catch { /* Preferences remain usable without storage. */ }
+  }
 
   useEffect(() => {
     const updateSection = () => {
@@ -188,9 +162,9 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="portfolio-shell">
+    <div className="portfolio-shell" data-theme={appearance.theme} style={{ "--accent-hue": appearance.hue } as CSSProperties}>
       <div className="site-background" aria-hidden="true">
-        {ditherEnabled && <DitherBackground />}
+        <DitherBackground {...appearance} />
       </div>
       <nav className="side-nav" aria-label="Main navigation">
         {sections.map((item) => (
@@ -208,14 +182,24 @@ export default function Page() {
         </div>
       </main>
       <Gallery />
-      <button
-        className="dither-toggle"
-        type="button"
-        aria-label="Animated background"
-        aria-pressed={ditherEnabled}
-        title={ditherEnabled ? "Turn off animated background" : "Turn on animated background"}
-        onClick={() => setDitherEnabled((enabled) => !enabled)}
-      />
+      <aside className="appearance-controls" aria-label="Appearance">
+        <div className="accent-control">
+          <label htmlFor="accent-hue">Accent colour</label>
+          <input id="accent-hue" className="accent-slider" type="range" min="0" max="360"
+            value={appearance.hue} onChange={(event) => updateAppearance({ hue: Number(event.target.value) })} />
+        </div>
+        <div className="theme-control">
+          <span className="control-label" id="theme-label">Theme</span>
+          <div className="theme-buttons" role="group" aria-labelledby="theme-label">
+            <button className="theme-button light-swatch" type="button" aria-label="Light theme"
+              aria-pressed={appearance.theme === "light"} title="Light theme"
+              onClick={() => updateAppearance({ theme: "light" })}><span /></button>
+            <button className="theme-button dark-swatch" type="button" aria-label="Dark theme"
+              aria-pressed={appearance.theme === "dark"} title="Dark theme"
+              onClick={() => updateAppearance({ theme: "dark" })}><span /></button>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }
