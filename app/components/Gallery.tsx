@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
 // Standalone images deliberately have no corresponding work item.
-const galleryImages: { id: string; label: string; image?: string }[] = [
-  { id: "canine-studio", label: "Canine Studio" },
+const galleryImages: { id: string; label: string; image?: { src: string; width: number; height: number } }[] = [
+  { id: "canine-studio", label: "Canine Studio", image: { src: "/canine-studio.png", width: 2914, height: 1736 } },
   { id: "asanjo", label: "Asanjo" },
   { id: "standalone-1", label: "Gallery image 1" },
-  { id: "eatree", label: "Eatree" },
-  { id: "tata", label: "Tata Group & Sons", image: "/tata-prioritized-comment-queue.png" },
+  { id: "eatree", label: "Eatree", image: { src: "/eatree.png", width: 2916, height: 1736 } },
+  { id: "tata", label: "Tata Group & Sons", image: { src: "/tata-prioritized-comment-queue-19653c72.png", width: 4164, height: 2984 } },
   { id: "standalone-2", label: "Gallery image 2" },
   { id: "jagdish", label: "Jagdish Store" },
   { id: "spread-home", label: "Spread Home" },
@@ -27,6 +27,7 @@ function GalleryViewer({ initialIndex, origin, onClose }: {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const move = (direction: number) => setIndex((current) => (current + direction + imageCount) % imageCount);
+  const currentImage = galleryImages[index].image;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -71,10 +72,10 @@ function GalleryViewer({ initialIndex, origin, onClose }: {
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5-7 7 7 7M7 12h13" /></svg>
         </button>
         <figure className="viewer-figure">
-          <div className="viewer-image" ref={imageRef} role="img"
-            aria-label={galleryImages[index].image ? galleryImages[index].label : `${galleryImages[index].label} placeholder`}>
-            {galleryImages[index].image && <Image className="viewer-art" src={galleryImages[index].image}
-              alt="" width={4164} height={2984} sizes="(max-width: 700px) 80vw, 860px" />}
+          <div className="viewer-image" ref={imageRef} role="img" data-has-image={!!currentImage}
+            aria-label={currentImage ? galleryImages[index].label : `${galleryImages[index].label} placeholder`}>
+            {currentImage && <Image className="viewer-art" src={currentImage.src}
+              alt="" width={currentImage.width} height={currentImage.height} sizes="(max-width: 700px) 80vw, 860px" />}
           </div>
           <figcaption aria-live="polite" aria-atomic="true">{galleryImages[index].label} · {index + 1} / {imageCount}</figcaption>
         </figure>
@@ -186,24 +187,29 @@ export default function Gallery({ activeId }: { activeId: string | null }) {
           onBlurCapture={(event) => {
             if (!event.currentTarget.contains(event.relatedTarget)) pauseUntilRef.current = performance.now() + 3000;
           }}>
-          {Array.from({ length: imageCount * 4 }, (_, index) => (
-            <button className="gallery-frame" type="button" key={index}
-              data-repeat={index >= imageCount}
-              data-gallery-id={galleryImages[index % imageCount].id}
-              data-highlighted={activeId === galleryImages[index % imageCount].id}
-              tabIndex={index < imageCount ? 0 : -1}
-              aria-label={`Open ${galleryImages[index % imageCount].label}`} aria-haspopup="dialog"
-              onClick={(event) => {
-                triggerRef.current = event.currentTarget;
-                viewerOpenRef.current = true;
-                setSelected({ index: index % imageCount, origin: event.currentTarget.getBoundingClientRect() });
-              }}>
-              {galleryImages[index % imageCount].image && <Image className="gallery-art"
-                src={galleryImages[index % imageCount].image!} alt="" width={4164} height={2984}
-                sizes="(max-width: 700px) 80vw, 35vw" />}
-              <span className="gallery-card-label">{galleryImages[index % imageCount].label}</span>
-            </button>
-          ))}
+          {Array.from({ length: imageCount * 4 }, (_, index) => {
+            const item = galleryImages[index % imageCount];
+            return (
+              <button className="gallery-frame" type="button" key={index}
+                disabled
+                data-repeat={index >= imageCount}
+                data-has-image={!!item.image}
+                data-gallery-id={item.id}
+                data-highlighted={activeId === item.id}
+                tabIndex={-1}
+                aria-label={item.label}
+                onClick={(event) => {
+                  triggerRef.current = event.currentTarget;
+                  viewerOpenRef.current = true;
+                  setSelected({ index: index % imageCount, origin: event.currentTarget.getBoundingClientRect() });
+                }}>
+                {item.image && <Image className="gallery-art"
+                  src={item.image.src} alt="" width={item.image.width} height={item.image.height}
+                  sizes="(max-width: 700px) 80vw, 35vw" />}
+                <span className="gallery-card-label">{item.label}</span>
+              </button>
+            );
+          })}
         </div>
       </aside>
       {selected && <GalleryViewer initialIndex={selected.index} origin={selected.origin} onClose={() => {
