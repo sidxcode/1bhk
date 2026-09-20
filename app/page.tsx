@@ -139,6 +139,24 @@ export default function Page() {
   const previousSection = useRef(section);
   const [hoveredGallery, setHoveredGallery] = useState<string | null>(null);
   const [focusedGallery, setFocusedGallery] = useState<string | null>(null);
+  const [accentOpen, setAccentOpen] = useState(false);
+  const accentControlRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!accentOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!accentControlRef.current?.contains(event.target as Node)) setAccentOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setAccentOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [accentOpen]);
 
   useLayoutEffect(() => {
     if (previousSection.current === section) return;
@@ -221,12 +239,21 @@ export default function Page() {
         </div>
       </main>
       <Gallery activeId={section === "home" ? hoveredGallery ?? focusedGallery : null} />
-      <ScrollToTop />
+      <div className="bottom-controls">
       <aside className="appearance-controls" aria-label="Appearance">
-        <div className="accent-control">
-          <label htmlFor="accent-hue">Accent colour</label>
-          <input id="accent-hue" className="accent-slider" type="range" min="0" max="360"
-            value={appearance.hue} onChange={(event) => updateAppearance({ hue: Number(event.target.value) })} />
+        <div className="accent-control" ref={accentControlRef}>
+          <button className="accent-picker-button" type="button" aria-label="Choose accent colour"
+            aria-expanded={accentOpen} aria-controls="accent-picker" onClick={() => setAccentOpen((open) => !open)}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M12 3a9 9 0 1 0 0 18h1.2a2 2 0 0 0 1.6-3.2 1.9 1.9 0 0 1 1.5-3.1H18a3 3 0 0 0 3-3A9 9 0 0 0 12 3Z" />
+              <circle cx="7.5" cy="11" r=".8" fill="currentColor" stroke="none" /><circle cx="11" cy="7.5" r=".8" fill="currentColor" stroke="none" /><circle cx="16" cy="8.5" r=".8" fill="currentColor" stroke="none" />
+            </svg>
+          </button>
+          <div id="accent-picker" className="accent-picker" data-open={accentOpen}>
+            <label htmlFor="accent-hue">Accent colour</label>
+            <input id="accent-hue" className="accent-slider" type="range" min="0" max="360"
+              value={appearance.hue} onChange={(event) => updateAppearance({ hue: Number(event.target.value) })} />
+          </div>
         </div>
         <div className="theme-control">
           <span className="control-label" id="theme-label">Theme</span>
@@ -240,6 +267,8 @@ export default function Page() {
           </div>
         </div>
       </aside>
+      <ScrollToTop />
+      </div>
     </div>
   );
 }
