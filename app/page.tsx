@@ -21,12 +21,12 @@ const sections: { id: Section; label: string }[] = [
 
 const projects: { name: string; kind: string; categories: Category[]; galleryId: string }[] = [
   { name: "Canine Studio", kind: "Web & Brand Design", categories: ["Web", "Brand"], galleryId: "canine-studio" },
-  { name: "Asanjo", kind: "Product Design", categories: ["Product"], galleryId: "asanjo" },
-  { name: "Eatree", kind: "Product Design", categories: ["Product"], galleryId: "eatree" },
-  { name: "Tata Group & Sons", kind: "Brand Design", categories: ["Brand"], galleryId: "tata" },
-  { name: "Jagdish Store", kind: "Web Design", categories: ["Web"], galleryId: "jagdish" },
-  { name: "Spread Home", kind: "Web Design", categories: ["Web"], galleryId: "spread-home" },
-  { name: "Happiness Coach", kind: "Brand Design", categories: ["Brand"], galleryId: "happiness-coach" },
+  { name: "Asanjo", kind: "Web & Brand Design", categories: ["Web", "Brand"], galleryId: "asanjo" },
+  { name: "Eatree", kind: "Web Design", categories: ["Web"], galleryId: "eatree" },
+  { name: "Tata Group & Sons", kind: "Product Design", categories: ["Product"], galleryId: "tata" },
+  { name: "Jagdish Store", kind: "Product Design", categories: ["Product"], galleryId: "jagdish" },
+  { name: "Spread Home", kind: "Product Design", categories: ["Product"], galleryId: "spread-home" },
+  { name: "Happiness Coach", kind: "Product Design", categories: ["Product"], galleryId: "happiness-coach" },
 ];
 
 function HomeContent({ onHover, onFocus }: { onHover: (id: string | null) => void; onFocus: (id: string | null) => void }) {

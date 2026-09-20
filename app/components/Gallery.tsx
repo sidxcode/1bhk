@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
 // Standalone images deliberately have no corresponding work item.
-const galleryImages = [
+const galleryImages: { id: string; label: string; image?: string }[] = [
   { id: "canine-studio", label: "Canine Studio" },
   { id: "asanjo", label: "Asanjo" },
   { id: "standalone-1", label: "Gallery image 1" },
   { id: "eatree", label: "Eatree" },
-  { id: "tata", label: "Tata Group & Sons" },
+  { id: "tata", label: "Tata Group & Sons", image: "/tata-prioritized-comment-queue.png" },
   { id: "standalone-2", label: "Gallery image 2" },
   { id: "jagdish", label: "Jagdish Store" },
   { id: "spread-home", label: "Spread Home" },
@@ -70,7 +71,11 @@ function GalleryViewer({ initialIndex, origin, onClose }: {
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 5-7 7 7 7M7 12h13" /></svg>
         </button>
         <figure className="viewer-figure">
-          <div className="viewer-image" ref={imageRef} role="img" aria-label={`${galleryImages[index].label} placeholder`} />
+          <div className="viewer-image" ref={imageRef} role="img"
+            aria-label={galleryImages[index].image ? galleryImages[index].label : `${galleryImages[index].label} placeholder`}>
+            {galleryImages[index].image && <Image className="viewer-art" src={galleryImages[index].image}
+              alt="" width={4164} height={2984} sizes="(max-width: 700px) 80vw, 860px" />}
+          </div>
           <figcaption aria-live="polite" aria-atomic="true">{galleryImages[index].label} · {index + 1} / {imageCount}</figcaption>
         </figure>
         <button className="viewer-button viewer-next" type="button" aria-label="Next image" onClick={() => move(1)}>
@@ -192,7 +197,12 @@ export default function Gallery({ activeId }: { activeId: string | null }) {
                 triggerRef.current = event.currentTarget;
                 viewerOpenRef.current = true;
                 setSelected({ index: index % imageCount, origin: event.currentTarget.getBoundingClientRect() });
-              }}><span className="gallery-card-label">{galleryImages[index % imageCount].label}</span></button>
+              }}>
+              {galleryImages[index % imageCount].image && <Image className="gallery-art"
+                src={galleryImages[index % imageCount].image!} alt="" width={4164} height={2984}
+                sizes="(max-width: 700px) 80vw, 35vw" />}
+              <span className="gallery-card-label">{galleryImages[index % imageCount].label}</span>
+            </button>
           ))}
         </div>
       </aside>
