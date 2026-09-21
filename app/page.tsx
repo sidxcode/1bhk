@@ -4,6 +4,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import dynamic from "next/dynamic";
 import Gallery from "./components/Gallery";
 import ScrollToTop from "./components/ScrollToTop";
+import CaseStudyView from "./components/CaseStudy";
+import { caseStudyBySlug } from "./case-studies";
 
 const DitherBackground = dynamic(() => import("./components/Dither"), { ssr: false });
 
@@ -73,13 +75,13 @@ function HomeContent({ onHover, onFocus }: { onHover: (id: string | null) => voi
         </div>
         <div className="project-list">
           {visibleProjects.map((project) => (
-            <div className="project-row" key={project.name} tabIndex={0}
+            <a className="project-row" key={project.name} href={`#work/${project.galleryId}`}
               onPointerEnter={(event) => { if (event.pointerType !== "touch") onHover(project.galleryId); }}
               onPointerLeave={() => onHover(null)}
               onFocus={() => onFocus(project.galleryId)} onBlur={() => onFocus(null)}>
               <span>{project.name}</span>
               <span className="project-kind">{project.kind}</span>
-            </div>
+            </a>
           ))}
         </div>
       </section>
@@ -132,6 +134,7 @@ function AboutContent() {
 
 export default function Page() {
   const [section, setSection] = useState<Section>("home");
+  const [caseSlug, setCaseSlug] = useState<string | null>(null);
   const [appearance, setAppearance] = useState<Appearance>({ theme: "dark", hue: 220 });
   const contentRef = useRef<HTMLElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
@@ -200,7 +203,9 @@ export default function Page() {
   useEffect(() => {
     const updateSection = () => {
       const hash = window.location.hash.slice(1);
-      setSection(sections.some((item) => item.id === hash) ? hash as Section : "home");
+      const slug = hash.startsWith("work/") ? hash.slice("work/".length) : null;
+      setCaseSlug(slug && caseStudyBySlug.has(slug) ? slug : null);
+      if (!slug) setSection(sections.some((item) => item.id === hash) ? hash as Section : "home");
       contentRef.current?.scrollTo({ top: 0 });
       if (window.matchMedia("(max-width: 700px)").matches) window.scrollTo({ top: 0, behavior: "instant" });
       setHoveredGallery(null);
@@ -211,8 +216,10 @@ export default function Page() {
     return () => window.removeEventListener("hashchange", updateSection);
   }, []);
 
+  const study = caseSlug ? caseStudyBySlug.get(caseSlug) ?? null : null;
+
   return (
-    <div className="portfolio-shell" data-theme={appearance.theme} style={{ "--accent-hue": appearance.hue } as CSSProperties}>
+    <div className="portfolio-shell" data-view={study ? "case-study" : "site"} data-theme={appearance.theme} style={{ "--accent-hue": appearance.hue } as CSSProperties}>
       <div className="site-background" aria-hidden="true">
         <DitherBackground {...appearance} />
       </div>
@@ -230,6 +237,7 @@ export default function Page() {
           </a>
         ))}
       </nav>
+      {study ? <CaseStudyView key={study.slug} study={study} /> : <>
       <main className="content-panel" ref={contentRef} id={section}>
         <div className="content-inner" ref={pageRef}>
           {section === "home" && <HomeContent onHover={setHoveredGallery} onFocus={setFocusedGallery} />}
@@ -239,6 +247,7 @@ export default function Page() {
         </div>
       </main>
       <Gallery activeId={section === "home" ? hoveredGallery ?? focusedGallery : null} />
+      </>}
       <div className="bottom-controls">
       <aside className="appearance-controls" aria-label="Appearance">
         <div className="accent-control" ref={accentControlRef}>
