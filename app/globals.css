@@ -171,3 +171,68 @@ h2, .intro-heading p { color: var(--secondary-text); }
   .scroll-to-top { position: static; flex: none; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--border); border-radius: 50%; color: var(--primary-text); background: color-mix(in srgb, var(--background) 45%, transparent); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: 0 4px 20px rgb(0 0 0 / 8%); pointer-events: auto; }
   .scroll-to-top:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; }
 }
+
+/* Case study — an opened project. Left rail holds the writing as an accordion of
+   section bars; the right pane scrolls the imagery and drives which section is open. */
+.portfolio-shell[data-view="case-study"] { grid-template-columns: 16% 30% 54%; }
+.case-info { min-width: 0; height: 100%; display: flex; flex-direction: column; padding: 12vh 12px 38px 19px; overflow: hidden; }
+.case-back { align-self: flex-start; margin: 0 10px 12px; color: var(--secondary-text); line-height: 12px; transition: color .15s ease; }
+.case-back:hover, .case-back:focus-visible { color: var(--primary-text); }
+.case-back:focus-visible, .case-bar-row:focus-visible, .case-card-button:focus-visible, .case-more-item:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; }
+.case-sections { display: flex; flex-direction: column; min-height: 0; }
+
+.case-bar-row { display: flex; align-items: center; gap: 8px; height: 10px; padding: 4px 10px; border: 0; background: none; overflow: hidden; transition: height .3s ease, padding .3s ease, opacity .25s ease; }
+.case-section.is-open .case-bar-row { height: 0; padding-top: 0; padding-bottom: 0; opacity: 0; pointer-events: none; }
+.case-bar { flex: none; display: block; width: 24px; height: 2px; border-radius: 9999px; background: var(--primary-text); opacity: .2; transition: width .18s ease, opacity .18s ease, border-radius .18s ease; }
+.case-bar-label { color: var(--primary-text); line-height: 12px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+.case-bar-row:hover .case-bar-label, .case-bar-row:focus-visible .case-bar-label { opacity: .5; }
+
+.case-section-body { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .4s cubic-bezier(.3,.7,.2,1), opacity .3s ease; }
+.case-section.is-open .case-section-body { grid-template-rows: 1fr; opacity: 1; }
+.case-section-clip { overflow: hidden; }
+.case-text { display: flex; flex-direction: column; gap: 8px; padding: 12px 10px; max-width: 400px; }
+.case-title { margin: 0; font-weight: 600; line-height: 12px; color: var(--primary-text); }
+.case-paragraph { color: var(--secondary-text); line-height: 1.85; white-space: pre-wrap; }
+.case-subheading { color: var(--primary-text); line-height: 1.85; font-weight: 500; }
+.case-pair { display: flex; flex-direction: column; }
+.case-text > :not(.case-title) + :is(.case-pair, .case-subheading) { margin-top: 16px; }
+
+.case-more-list { display: flex; flex-direction: column; gap: 2px; }
+.case-more-item { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 6px 0; color: var(--primary-text); font-weight: 500; transition: padding-left .15s ease, background .15s ease; }
+.case-more-item:hover { background: var(--hover); box-shadow: inset 0 0 0 1px var(--border); padding-left: 10px; }
+.case-more-kind { color: var(--secondary-text); white-space: nowrap; opacity: 0; transition: opacity .15s ease; }
+.case-more-item:hover .case-more-kind { opacity: 1; }
+
+.case-sites { align-self: flex-start; display: flex; flex-direction: column; align-items: flex-start; margin: auto 10px 0; }
+.case-site { color: var(--secondary-text); line-height: 1.85; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; text-decoration-color: color-mix(in srgb, var(--secondary-text) 40%, transparent); transition: color .15s ease, text-decoration-color .15s ease; }
+.case-site:hover, .case-site:focus-visible { color: var(--primary-text); text-decoration-color: currentColor; }
+
+.case-pane { min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; padding: 24px 12px 24px 96px; overflow-y: auto; scrollbar-width: none; }
+.case-pane::-webkit-scrollbar { display: none; }
+.case-card { position: relative; flex: none; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 726px; height: 520px; padding: 16px 16px 48px; overflow: hidden; background: var(--surface); -webkit-backdrop-filter: blur(28px); backdrop-filter: blur(28px); box-shadow: inset 0 0 0 1px var(--border); }
+.case-card-button { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.case-card-art { display: block; width: 100%; height: 100%; border-radius: 4px; object-fit: contain; }
+.case-card-caption { position: absolute; left: 50%; bottom: 12px; translate: -50% 0; white-space: nowrap; color: var(--secondary-text); font-weight: 500; }
+.case-tailspace { flex: none; height: 60vh; }
+
+@media (max-width: 1000px) {
+  .case-pane { padding-left: 32px; }
+  .case-card { height: 420px; }
+}
+@media (max-width: 700px) {
+  .portfolio-shell[data-view="case-study"] { display: block; }
+  .case-info { height: auto; padding: 32px 22px 0; overflow: visible; }
+  .case-back, .case-sites { margin-inline: 0; }
+  .case-sites { margin-top: 24px; }
+  /* No scroll-driven rail on small screens — every section reads as plain text. */
+  .case-bar-row { display: none; }
+  .case-section-body { grid-template-rows: 1fr; opacity: 1; }
+  .case-text { padding: 12px 0; }
+  .case-section + .case-section { margin-top: 28px; }
+  .case-pane { height: auto; align-items: stretch; gap: 16px; padding: 32px 22px 96px; overflow: visible; }
+  .case-card { max-width: none; height: 300px; }
+  .case-tailspace { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .case-section-body, .case-bar, .case-bar-row, .case-more-item { transition: none; }
+}
